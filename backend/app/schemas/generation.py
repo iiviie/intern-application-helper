@@ -17,6 +17,8 @@ class GenerationRequest(BaseModel):
     additional_context: str | None = Field(None, description="Any additional context or requirements")
     tone: str = Field(default="professional", description="Tone of the message (professional, friendly, enthusiastic, etc.)")
     max_length: int = Field(default=500, description="Maximum length of generated content in words")
+    use_chain_of_thought: bool = Field(default=True, description="Use 2-stage chain-of-thought generation for better quality")
+    use_examples: bool = Field(default=True, description="Include example emails in prompt for few-shot learning")
 
 
 class GenerationResponse(BaseModel):
@@ -25,6 +27,7 @@ class GenerationResponse(BaseModel):
     generation_type: GenerationType
     user_profile_id: int
     company_id: int
+    chain_of_thought: str | None = Field(None, description="The planning/thinking step (if chain-of-thought was used)")
     metadata: dict = Field(default_factory=dict, description="Additional metadata about the generation")
 
 

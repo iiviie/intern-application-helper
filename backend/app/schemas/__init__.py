@@ -15,6 +15,12 @@ from app.schemas.generation import (
     BulkGenerationRequest,
     BulkGenerationResponse,
 )
+from app.schemas.example import (
+    ExampleType,
+    ExampleCreate,
+    ExampleUpdate,
+    ExampleResponse,
+)
 
 __all__ = [
     "UserProfileCreate",
@@ -28,4 +34,8 @@ __all__ = [
     "GenerationResponse",
     "BulkGenerationRequest",
     "BulkGenerationResponse",
+    "ExampleType",
+    "ExampleCreate",
+    "ExampleUpdate",
+    "ExampleResponse",
 ]

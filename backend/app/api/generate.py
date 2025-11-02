@@ -45,14 +45,17 @@ async def generate_content(
         )
 
     try:
-        # Generate content using AI service
-        generated_content = await ai_service.generate_content(
+        # Generate content using AI service with new features
+        generated_content, chain_of_thought = await ai_service.generate_content(
             profile=profile,
             company=company,
             generation_type=request.generation_type,
             tone=request.tone,
             max_length=request.max_length,
             additional_context=request.additional_context,
+            use_chain_of_thought=request.use_chain_of_thought,
+            use_examples=request.use_examples,
+            db=db,
         )
 
         return GenerationResponse(
@@ -60,11 +63,14 @@ async def generate_content(
             generation_type=request.generation_type,
             user_profile_id=request.user_profile_id,
             company_id=request.company_id,
+            chain_of_thought=chain_of_thought,
             metadata={
                 "company_name": company.name,
                 "user_name": profile.name,
                 "tone": request.tone,
                 "max_length": request.max_length,
+                "used_chain_of_thought": request.use_chain_of_thought,
+                "used_examples": request.use_examples,
             }
         )
 

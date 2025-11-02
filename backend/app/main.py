@@ -49,7 +49,8 @@ async def health_check():
 
 
 # Import and include routers
-from app.api import user_profile, company, generate
+from app.api import user_profile, company, generate, example
 app.include_router(user_profile.router, prefix="/api", tags=["user_profile"])
 app.include_router(company.router, prefix="/api", tags=["company"])
 app.include_router(generate.router, prefix="/api", tags=["generate"])
+app.include_router(example.router, prefix="/api", tags=["examples"])

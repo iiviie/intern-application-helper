@@ -22,6 +22,7 @@ langgraph==0.2.45
 # Utilities
 python-dotenv==1.0.1
 python-jose[cryptography]==3.3.0
+pypdf==5.1.0
 
 # CORS
 fastapi-cors==0.0.6

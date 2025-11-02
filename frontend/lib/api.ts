@@ -30,6 +30,27 @@ export const profileAPI = {
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
+
+  async parseResumeText(resumeText: string) {
+    const res = await fetch(`${API_URL}/api/profile/parse-resume-text`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resume_text: resumeText }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  async parseResumePdf(file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${API_URL}/api/profile/parse-resume-pdf`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
 };
 
 // Company API
@@ -73,6 +94,8 @@ export const generateAPI = {
     tone?: string;
     max_length?: number;
     additional_context?: string;
+    use_chain_of_thought?: boolean;
+    use_examples?: boolean;
   }) {
     const res = await fetch(`${API_URL}/api/generate`, {
       method: 'POST',
@@ -81,5 +104,50 @@ export const generateAPI = {
     });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
+  },
+};
+
+// Example API
+export const exampleAPI = {
+  async create(data: any) {
+    const res = await fetch(`${API_URL}/api/examples`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  async list(generationType?: string) {
+    const url = generationType
+      ? `${API_URL}/api/examples?generation_type=${generationType}`
+      : `${API_URL}/api/examples`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  async get(id: number) {
+    const res = await fetch(`${API_URL}/api/examples/${id}`);
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  async update(id: number, data: any) {
+    const res = await fetch(`${API_URL}/api/examples/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  async delete(id: number) {
+    const res = await fetch(`${API_URL}/api/examples/${id}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error(await res.text());
   },
 };

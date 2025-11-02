@@ -31,6 +31,9 @@ export default function RootLayout({
                 <Link href="/generate" className="flex items-center text-gray-600 hover:text-gray-900">
                   Generate
                 </Link>
+                <Link href="/examples" className="flex items-center text-gray-600 hover:text-gray-900">
+                  Examples
+                </Link>
               </div>
             </div>
           </div>

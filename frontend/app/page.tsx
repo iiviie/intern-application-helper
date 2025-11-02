@@ -10,7 +10,7 @@ export default function Home() {
         Create personalized cold emails, DMs, and applications with AI
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mt-12">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto mt-12">
         <Link href="/profile" className="p-6 bg-white rounded-lg shadow hover:shadow-lg transition">
           <div className="text-3xl mb-3">👤</div>
           <h3 className="text-lg font-semibold mb-2">Step 1: Profile</h3>
@@ -23,10 +23,16 @@ export default function Home() {
           <p className="text-gray-600">Add companies you want to apply to</p>
         </Link>
 
-        <Link href="/generate" className="p-6 bg-white rounded-lg shadow hover:shadow-lg transition">
+        <Link href="/examples" className="p-6 bg-white rounded-lg shadow hover:shadow-lg transition border-2 border-blue-200">
+          <div className="text-3xl mb-3">📚</div>
+          <h3 className="text-lg font-semibold mb-2">Optional: Examples</h3>
+          <p className="text-gray-600">Add sample emails to improve AI quality</p>
+        </Link>
+
+        <Link href="/generate" className="p-6 bg-white rounded-lg shadow hover:shadow-lg transition md:col-span-3 bg-gradient-to-r from-blue-50 to-purple-50">
           <div className="text-3xl mb-3">✨</div>
           <h3 className="text-lg font-semibold mb-2">Step 3: Generate</h3>
-          <p className="text-gray-600">Create personalized application content</p>
+          <p className="text-gray-600">Create personalized application content with AI</p>
         </Link>
       </div>
     </div>

@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database import get_db
 from app.models import UserProfile
 from app.schemas import UserProfileCreate, UserProfileUpdate, UserProfileResponse
+from app.schemas.resume import ResumeParseRequest, ResumeParseResponse
+from app.services.resume_parser import resume_parser
 
 router = APIRouter()
 
@@ -96,6 +98,69 @@ async def update_user_profile(
     await db.refresh(db_profile)
 
     return db_profile
+
+
+@router.post("/profile/parse-resume-text", response_model=ResumeParseResponse)
+async def parse_resume_from_text(
+    request: ResumeParseRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """Parse resume from LaTeX or plain text and extract structured data."""
+    try:
+        parsed_data = await resume_parser.parse_resume(request.resume_text)
+        return ResumeParseResponse(
+            parsed_data=parsed_data,
+            message="Resume parsed successfully"
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to parse resume: {str(e)}"
+        )
+
+
+@router.post("/profile/parse-resume-pdf", response_model=ResumeParseResponse)
+async def parse_resume_from_pdf(
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db)
+):
+    """Parse resume from uploaded PDF file and extract structured data."""
+    # Validate file type
+    if not file.content_type == "application/pdf":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only PDF files are supported"
+        )
+
+    try:
+        # Read PDF bytes
+        pdf_bytes = await file.read()
+
+        # Extract text from PDF
+        resume_text = await resume_parser.extract_text_from_pdf(pdf_bytes)
+
+        # Parse the extracted text
+        parsed_data = await resume_parser.parse_resume(resume_text)
+
+        return ResumeParseResponse(
+            parsed_data=parsed_data,
+            message="Resume parsed successfully from PDF"
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to parse PDF resume: {str(e)}"
+        )
 
 
 @router.delete("/profile/{profile_id}", status_code=status.HTTP_204_NO_CONTENT)
