@@ -17,6 +17,10 @@ export default function GeneratePage() {
   const [chainOfThought, setChainOfThought] = useState('');
   const [showThinking, setShowThinking] = useState(false);
   const [error, setError] = useState('');
+  const [refining, setRefining] = useState(false);
+  const [sectionToReplace, setSectionToReplace] = useState('');
+  const [refineFeedback, setRefineFeedback] = useState('');
+  const [refinedSection, setRefinedSection] = useState('');
 
   const [formData, setFormData] = useState({
     company_id: '',
@@ -90,6 +94,47 @@ export default function GeneratePage() {
   const copyToClipboard = () => {
     navigator.clipboard.writeText(generated);
     alert('Copied to clipboard!');
+  };
+
+  const handleRefine = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!sectionToReplace.trim() || !refineFeedback.trim()) {
+      setError('Please provide both the section to replace and your feedback.');
+      return;
+    }
+
+    setRefining(true);
+    setError('');
+    setRefinedSection('');
+
+    try {
+      const result = await generateAPI.refine({
+        user_profile_id: profile.id,
+        company_id: parseInt(formData.company_id),
+        generation_type: formData.generation_type,
+        full_content: generated,
+        section_to_replace: sectionToReplace,
+        user_feedback: refineFeedback,
+        tone: formData.tone,
+      });
+
+      setRefinedSection(result.refined_section);
+    } catch (error: any) {
+      setError(`Error refining: ${error.message}`);
+    } finally {
+      setRefining(false);
+    }
+  };
+
+  const applyRefinedSection = () => {
+    if (!refinedSection) return;
+    const updated = generated.replace(sectionToReplace, refinedSection);
+    setGenerated(updated);
+    setSectionToReplace('');
+    setRefineFeedback('');
+    setRefinedSection('');
+    alert('Section replaced in generated content!');
   };
 
   const getWordCount = (text: string) => {
@@ -308,6 +353,69 @@ export default function GeneratePage() {
               </div>
             )}
           </div>
+
+          {/* Refinement Section */}
+          {generated && !loading && (
+            <div className="bg-white shadow rounded-lg p-6">
+              <h2 className="text-lg font-semibold mb-4">✨ Refine a Section</h2>
+              <p className="text-sm text-gray-600 mb-4">
+                Not happy with a specific part? Copy-paste it below and tell me what you want different.
+              </p>
+
+              <form onSubmit={handleRefine} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Section to Replace
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="Paste the exact text you want to improve..."
+                    value={sectionToReplace}
+                    onChange={(e) => setSectionToReplace(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    What do you want different?
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="E.g., 'Make it more casual', 'Focus on my Python experience instead', 'Sound less formal'..."
+                    value={refineFeedback}
+                    onChange={(e) => setRefineFeedback(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={refining || !sectionToReplace.trim() || !refineFeedback.trim()}
+                  className="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 disabled:bg-gray-400"
+                >
+                  {refining ? 'Refining...' : '✨ Refine Section'}
+                </button>
+              </form>
+
+              {refinedSection && (
+                <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="text-sm font-semibold text-green-900">✅ Refined Version:</h3>
+                    <button
+                      onClick={applyRefinedSection}
+                      className="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                    >
+                      Replace in Content
+                    </button>
+                  </div>
+                  <div className="text-sm text-gray-800 whitespace-pre-wrap bg-white p-3 rounded border border-green-300">
+                    {refinedSection}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

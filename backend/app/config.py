@@ -15,7 +15,7 @@ class Settings(BaseSettings):
 
     # Gemini API settings
     gemini_api_key: str
-    gemini_model: str = "gemini-2.0-flash"
+    gemini_model: str = "gemini-2.5-pro"
 
     # LangSmith settings (optional)
     langsmith_api_key: str | None = None

@@ -108,29 +108,6 @@ async def parse_resume_from_text(
     """Parse resume from LaTeX or plain text and extract structured data."""
     try:
         parsed_data = await resume_parser.parse_resume(request.resume_text)
-
-        # Log the parsed data
-        print("\n" + "="*80)
-        print("RESUME PARSING SUCCESSFUL")
-        print("="*80)
-        print(f"Name: {parsed_data.get('name')}")
-        print(f"Email: {parsed_data.get('email')}")
-        print(f"Phone: {parsed_data.get('phone')}")
-        print(f"Location: {parsed_data.get('location')}")
-        print(f"Bio: {parsed_data.get('bio')}")
-        print(f"Skills ({len(parsed_data.get('skills', []))}): {', '.join(parsed_data.get('skills', [])[:5])}...")
-        print(f"Experience ({len(parsed_data.get('experience', []))} entries):")
-        for exp in parsed_data.get('experience', []):
-            print(f"  - {exp.get('role')} at {exp.get('company')} ({exp.get('duration')})")
-        print(f"Projects ({len(parsed_data.get('projects', []))} entries):")
-        for proj in parsed_data.get('projects', []):
-            print(f"  - {proj.get('name')} | Tech: {', '.join(proj.get('tech_stack', [])[:3])}")
-        print(f"Education ({len(parsed_data.get('education', []))} entries):")
-        for edu in parsed_data.get('education', []):
-            print(f"  - {edu.get('degree')} at {edu.get('institution')} (GPA: {edu.get('gpa')})")
-        print(f"Links: GitHub={parsed_data.get('links', {}).get('github')}, LinkedIn={parsed_data.get('links', {}).get('linkedin')}")
-        print("="*80 + "\n")
-
         return ResumeParseResponse(
             parsed_data=parsed_data,
             message="Resume parsed successfully"

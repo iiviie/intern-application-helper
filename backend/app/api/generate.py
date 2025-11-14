@@ -8,6 +8,8 @@ from app.schemas import (
     GenerationResponse,
     BulkGenerationRequest,
     BulkGenerationResponse,
+    RefineRequest,
+    RefineResponse,
 )
 from app.services.ai_service import ai_service
 
@@ -223,3 +225,57 @@ async def generate_application(
     )
 
     return await generate_content(request, db)
+
+
+@router.post("/refine", response_model=RefineResponse)
+async def refine_section(
+    request: RefineRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """Refine a specific section of generated content based on user feedback."""
+    # Fetch user profile
+    profile_result = await db.execute(
+        select(UserProfile).where(UserProfile.id == request.user_profile_id)
+    )
+    profile = profile_result.scalar_one_or_none()
+
+    if not profile:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User profile with ID {request.user_profile_id} not found"
+        )
+
+    # Fetch company
+    company_result = await db.execute(
+        select(Company).where(Company.id == request.company_id)
+    )
+    company = company_result.scalar_one_or_none()
+
+    if not company:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Company with ID {request.company_id} not found"
+        )
+
+    try:
+        # Refine the section using AI service
+        refined = await ai_service.refine_section(
+            profile=profile,
+            company=company,
+            generation_type=request.generation_type,
+            full_content=request.full_content,
+            section_to_replace=request.section_to_replace,
+            user_feedback=request.user_feedback,
+            tone=request.tone,
+        )
+
+        return RefineResponse(
+            refined_section=refined,
+            original_section=request.section_to_replace,
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error refining content: {str(e)}"
+        )

@@ -399,6 +399,76 @@ Write like you're emailing someone you respect but know casually. Natural. Speci
 
         return content, chain_of_thought
 
+    async def refine_section(
+        self,
+        profile: UserProfile,
+        company: Company,
+        generation_type: GenerationType,
+        full_content: str,
+        section_to_replace: str,
+        user_feedback: str,
+        tone: str = "professional",
+    ) -> str:
+        """
+        Refine a specific section of generated content based on user feedback.
+
+        Args:
+            profile: User profile
+            company: Company info
+            generation_type: Type of content
+            full_content: The full generated content for context
+            section_to_replace: The specific text to replace
+            user_feedback: What the user wants to change
+            tone: Tone to maintain
+
+        Returns:
+            Refined section text
+        """
+        user_info = self._format_user_profile(profile)
+        company_info = self._format_company_info(company)
+
+        content_type_name = {
+            GenerationType.COLD_EMAIL: "cold email",
+            GenerationType.COLD_DM: "direct message",
+            GenerationType.APPLICATION: "cover letter",
+        }.get(generation_type, "message")
+
+        prompt = f"""You're helping refine a {tone} {content_type_name} to {company.name}.
+
+APPLICANT INFO:
+{user_info}
+
+COMPANY INFO:
+{company_info}
+
+FULL {content_type_name.upper()} (for context):
+{full_content}
+
+SECTION TO REPLACE:
+{section_to_replace}
+
+USER FEEDBACK:
+{user_feedback}
+
+Your task: Rewrite ONLY the section mentioned above, incorporating the user's feedback while:
+1. Maintaining the overall tone and style of the rest of the content
+2. Keeping it human and natural (use contractions, conversational language)
+3. Making it flow seamlessly with the surrounding content
+4. Addressing the specific changes the user requested
+
+CRITICAL - Keep the same human writing style:
+- Use contractions (I've, it's, I'd)
+- Be specific and concrete
+- Avoid AI buzzwords (innovative, cutting-edge, leverage, robust)
+- Natural conversational flow
+- Sound genuine, not robotic
+
+Return ONLY the refined section - no explanations, no additional commentary."""
+
+        messages = [HumanMessage(content=prompt)]
+        response = await self.llm.ainvoke(messages)
+        return response.content.strip()
+
 
 # Singleton instance
 ai_service = AIService()

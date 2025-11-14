@@ -3,21 +3,25 @@
 import { useState, useEffect } from 'react';
 import { companyAPI } from '@/lib/api';
 
+interface CompanyFormData {
+  name: string;
+  job_role: string;
+  all_info: string;
+}
+
+const initialFormData: CompanyFormData = {
+  name: '',
+  job_role: '',
+  all_info: '',
+};
+
 export default function CompaniesPage() {
   const [companies, setCompanies] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-
-  const [formData, setFormData] = useState({
-    name: '',
-    founder_name: '',
-    description: '',
-    industry: '',
-    website: '',
-    job_role: '',
-    tech_stack: '',
-  });
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [formData, setFormData] = useState<CompanyFormData>(initialFormData);
 
   useEffect(() => {
     loadCompanies();
@@ -32,6 +36,42 @@ export default function CompaniesPage() {
     }
   };
 
+  const handleEdit = (company: any) => {
+    setEditingId(company.id);
+
+    // Consolidate all info back into one text field
+    const allInfoParts = [];
+    if (company.description) allInfoParts.push(company.description);
+    if (company.founder_name) allInfoParts.push(`Founder: ${company.founder_name}`);
+    if (company.industry) allInfoParts.push(`Industry: ${company.industry}`);
+    if (company.size) allInfoParts.push(`Size: ${company.size}`);
+    if (company.location) allInfoParts.push(`Location: ${company.location}`);
+    if (company.website) allInfoParts.push(`Website: ${company.website}`);
+    if (company.job_description) allInfoParts.push(`\nJob Description:\n${company.job_description}`);
+    if (company.requirements?.length > 0) allInfoParts.push(`\nRequirements:\n${company.requirements.join('\n')}`);
+    if (company.tech_stack?.length > 0) allInfoParts.push(`\nTech Stack: ${company.tech_stack.join(', ')}`);
+    if (company.values?.length > 0) allInfoParts.push(`\nValues: ${company.values.join(', ')}`);
+    if (company.culture_notes) allInfoParts.push(`\nCulture:\n${company.culture_notes}`);
+    if (company.recent_news) allInfoParts.push(`\nRecent News:\n${company.recent_news}`);
+    if (company.why_interested) allInfoParts.push(`\nWhy I'm Interested:\n${company.why_interested}`);
+    if (company.contact_info?.contact_person) allInfoParts.push(`\nContact: ${company.contact_info.contact_person}`);
+    if (company.contact_info?.email) allInfoParts.push(`Email: ${company.contact_info.email}`);
+    if (company.contact_info?.linkedin) allInfoParts.push(`LinkedIn: ${company.contact_info.linkedin}`);
+
+    setFormData({
+      name: company.name || '',
+      job_role: company.job_role || '',
+      all_info: allInfoParts.join('\n'),
+    });
+    setShowForm(true);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setFormData(initialFormData);
+    setShowForm(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -39,22 +79,21 @@ export default function CompaniesPage() {
 
     try {
       const payload = {
-        ...formData,
-        tech_stack: formData.tech_stack.split(',').map(s => s.trim()).filter(Boolean),
+        name: formData.name,
+        job_role: formData.job_role || undefined,
+        description: formData.all_info, // Store everything in description for now
+        // The AI will be able to extract relevant info from the description
       };
 
-      await companyAPI.create(payload);
-      setMessage('Company added successfully!');
-      setShowForm(false);
-      setFormData({
-        name: '',
-        founder_name: '',
-        description: '',
-        industry: '',
-        website: '',
-        job_role: '',
-        tech_stack: '',
-      });
+      if (editingId) {
+        await companyAPI.update(editingId, payload);
+        setMessage('Company updated successfully!');
+      } else {
+        await companyAPI.create(payload);
+        setMessage('Company added successfully!');
+      }
+
+      handleCancelEdit();
       await loadCompanies();
     } catch (error: any) {
       setMessage(`Error: ${error.message}`);
@@ -69,17 +108,24 @@ export default function CompaniesPage() {
     try {
       await companyAPI.delete(id);
       await loadCompanies();
+      setMessage('Company deleted successfully!');
     } catch (error: any) {
-      alert(`Error: ${error.message}`);
+      setMessage(`Error: ${error.message}`);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-5xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Companies</h1>
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => {
+            if (showForm) {
+              handleCancelEdit();
+            } else {
+              setShowForm(true);
+            }
+          }}
           className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
         >
           {showForm ? 'Cancel' : '+ Add Company'}
@@ -94,106 +140,87 @@ export default function CompaniesPage() {
 
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg p-6 mb-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Company Name *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Founder Name
-              </label>
-              <input
-                type="text"
-                value={formData.founder_name}
-                onChange={(e) => setFormData({ ...formData, founder_name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
+          <h2 className="text-xl font-semibold border-b pb-2">
+            {editingId ? 'Edit Company' : 'Add New Company'}
+          </h2>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description *
-            </label>
-            <textarea
-              required
-              rows={3}
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Industry
-              </label>
-              <input
-                type="text"
-                value={formData.industry}
-                onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Job Role
-              </label>
-              <input
-                type="text"
-                placeholder="Software Engineer Intern"
-                value={formData.job_role}
-                onChange={(e) => setFormData({ ...formData, job_role: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Website
-            </label>
-            <input
-              type="url"
-              placeholder="https://..."
-              value={formData.website}
-              onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tech Stack (comma-separated)
+              Company Name *
             </label>
             <input
               type="text"
-              placeholder="Python, React, AWS"
-              value={formData.tech_stack}
-              onChange={(e) => setFormData({ ...formData, tech_stack: e.target.value })}
+              required
+              placeholder="e.g., Stripe, Anthropic, etc."
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
-          >
-            {loading ? 'Adding...' : 'Add Company'}
-          </button>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Job Role
+            </label>
+            <input
+              type="text"
+              placeholder="e.g., Software Engineer Intern (optional but helpful)"
+              value={formData.job_role}
+              onChange={(e) => setFormData({ ...formData, job_role: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              All Information *
+            </label>
+            <p className="text-sm text-gray-500 mb-2">
+              Paste everything here - job description, requirements, company info, tech stack, culture, contact details, etc.
+            </p>
+            <textarea
+              required
+              rows={16}
+              placeholder="Example:
+Founded by John Doe in 2020. Series A startup in SF.
+
+Software Engineer Intern - Backend Team
+Work with Python, FastAPI, PostgreSQL, Redis
+Build scalable APIs for financial data processing
+
+Requirements:
+- Python experience
+- Understanding of databases
+- CS fundamentals
+
+Company values innovation and work-life balance. Remote-friendly.
+Recently raised $20M Series A.
+
+Contact: jane@company.com (Hiring Manager)"
+              value={formData.all_info}
+              onChange={(e) => setFormData({ ...formData, all_info: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+            >
+              {loading ? (editingId ? 'Updating...' : 'Adding...') : (editingId ? 'Update Company' : 'Add Company')}
+            </button>
+            {editingId && (
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                className="px-6 bg-gray-300 text-gray-700 py-2 rounded-md hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
         </form>
       )}
 
@@ -205,46 +232,34 @@ export default function CompaniesPage() {
         ) : (
           companies.map((company) => (
             <div key={company.id} className="bg-white shadow rounded-lg p-6">
-              <div className="flex justify-between items-start mb-2">
+              <div className="flex justify-between items-start mb-3">
                 <div>
                   <h3 className="text-xl font-semibold">{company.name}</h3>
-                  {company.founder_name && (
-                    <p className="text-sm text-gray-600">Founder: {company.founder_name}</p>
+                  {company.job_role && (
+                    <p className="text-sm text-blue-600 font-medium mt-1">{company.job_role}</p>
                   )}
                 </div>
-                <button
-                  onClick={() => handleDelete(company.id)}
-                  className="text-red-600 hover:text-red-800"
-                >
-                  Delete
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleEdit(company)}
+                    className="text-blue-600 hover:text-blue-800 px-3 py-1 border border-blue-600 rounded hover:bg-blue-50"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(company.id)}
+                    className="text-red-600 hover:text-red-800 px-3 py-1 border border-red-600 rounded hover:bg-red-50"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
 
-              <p className="text-gray-700 mb-3">{company.description}</p>
-
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                {company.industry && (
-                  <p><span className="font-medium">Industry:</span> {company.industry}</p>
-                )}
-                {company.job_role && (
-                  <p><span className="font-medium">Role:</span> {company.job_role}</p>
-                )}
-                {company.website && (
-                  <p className="col-span-2">
-                    <span className="font-medium">Website:</span>{' '}
-                    <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                      {company.website}
-                    </a>
-                  </p>
-                )}
-                {company.tech_stack?.length > 0 && (
-                  <p className="col-span-2">
-                    <span className="font-medium">Tech Stack:</span> {company.tech_stack.join(', ')}
-                  </p>
-                )}
+              <div className="text-gray-700 whitespace-pre-wrap text-sm bg-gray-50 p-4 rounded border border-gray-200">
+                {company.description}
               </div>
 
-              <div className="mt-3 text-xs text-gray-500">
+              <div className="mt-3 text-xs text-gray-400">
                 ID: {company.id}
               </div>
             </div>

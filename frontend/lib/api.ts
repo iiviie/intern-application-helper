@@ -77,6 +77,16 @@ export const companyAPI = {
     return res.json();
   },
 
+  async update(id: number, data: any) {
+    const res = await fetch(`${API_URL}/api/companies/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
   async delete(id: number) {
     const res = await fetch(`${API_URL}/api/companies/${id}`, {
       method: 'DELETE',
@@ -98,6 +108,24 @@ export const generateAPI = {
     use_examples?: boolean;
   }) {
     const res = await fetch(`${API_URL}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  async refine(data: {
+    user_profile_id: number;
+    company_id: number;
+    generation_type: string;
+    full_content: string;
+    section_to_replace: string;
+    user_feedback: string;
+    tone?: string;
+  }) {
+    const res = await fetch(`${API_URL}/api/refine`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),

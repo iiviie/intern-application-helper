@@ -46,3 +46,20 @@ class BulkGenerationResponse(BaseModel):
     results: list[GenerationResponse]
     total_generated: int
     failed: list[dict] = Field(default_factory=list, description="List of failed generations with error details")
+
+
+class RefineRequest(BaseModel):
+    """Schema for refining a specific section of generated content."""
+    user_profile_id: int = Field(..., description="ID of the user profile")
+    company_id: int = Field(..., description="ID of the company")
+    generation_type: GenerationType = Field(..., description="Type of content")
+    full_content: str = Field(..., description="The full generated content for context")
+    section_to_replace: str = Field(..., description="The specific section to replace")
+    user_feedback: str = Field(..., description="User's feedback on what they want different")
+    tone: str = Field(default="professional", description="Tone to maintain")
+
+
+class RefineResponse(BaseModel):
+    """Schema for refinement response."""
+    refined_section: str = Field(..., description="The improved/refined section")
+    original_section: str = Field(..., description="The original section for reference")

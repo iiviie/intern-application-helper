@@ -14,6 +14,8 @@ from app.schemas.generation import (
     GenerationResponse,
     BulkGenerationRequest,
     BulkGenerationResponse,
+    RefineRequest,
+    RefineResponse,
 )
 from app.schemas.example import (
     ExampleType,
@@ -34,6 +36,8 @@ __all__ = [
     "GenerationResponse",
     "BulkGenerationRequest",
     "BulkGenerationResponse",
+    "RefineRequest",
+    "RefineResponse",
     "ExampleType",
     "ExampleCreate",
     "ExampleUpdate",
